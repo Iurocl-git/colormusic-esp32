@@ -1,16 +1,26 @@
 #include "network.h"
-#include "led_effects.h"
-#include "config.h"
 
 // Global variables definitions
 WebSocketsServer webSocket(webSocketPort);
 WiFiUDP udp;
 char incomingPacket[maxPacketSize];
-int lowFreqAmp = 0;
-int midFreqAmp = 0;
-int highFreqAmp = 0;
 int freqAmplitudes[32];
 LedMode currentMode = RAINBOW_wave;
+
+String serverURL = "ColorMusicESP32.com";  // Установите ваш URL
+IPAddress serverIP;
+
+void resolveHostName() {
+    if (WiFi.hostByName(serverURL.c_str(), serverIP)) {
+        Serial.print("Resolved IP for ");
+        Serial.print(serverURL);
+        Serial.print(": ");
+        Serial.println(serverIP);
+    } else {
+        Serial.println("DNS lookup failed.");
+    }
+}
+
 
 void setupOTA() {
     ArduinoOTA.setHostname("ESP32-OTA");
@@ -127,7 +137,9 @@ void handleTextCommand(const char* message) {
                 strobeFrequency = getFloatFromJSON(cmd,"value");
                 break;
             case 7:
-                brightness = getValueFromJSON(cmd,"value");
+                // brightness = getValueFromJSON(cmd,"value");
+                // Serial.print("sensitivityHIGH ");
+                Serial.println(brightness);
                 FastLED.setBrightness(brightness);
                 break;
             case 8:
@@ -140,7 +152,34 @@ void handleTextCommand(const char* message) {
                 sensitivityMID = getFloatFromJSON(cmd,"value");
                 break;
             case 11:
-                sensitivityHIGH = getFloatFromJSON(cmd,"value");
+                // sensitivityHIGH = getFloatFromJSON(cmd,"value");
+                // Serial.print("sensitivityHIGH ");
+                Serial.println(sensitivityHIGH);
+                break;
+            case 12:
+                // Serial.print("MAX_DROPS ");
+                // Serial.println(getValueFromJSON(cmd, "value"));
+                MAX_DROPS = getValueFromJSON(cmd, "value");
+                break;
+            case 13:
+                DROP_EXPANSION_SPEED = getFloatFromJSON(cmd, "value");
+                break;
+            case 14:
+                // Serial.print("MIN_TRIGGER_INTERVAL ");
+                // Serial.println(getValueFromJSON(cmd, "value"));
+                MIN_TRIGGER_INTERVAL = getValueFromJSON(cmd, "value");
+                break;
+            case 15:
+                CENTER_ZONE_SIZE = getValueFromJSON(cmd, "value");
+                break;
+            case 16:
+                DROP_WIDTH = getValueFromJSON(cmd, "value");
+                break;
+            case 17:
+                FADE_STYLE = getValueFromJSON(cmd, "value");
+                break;
+            case 18:
+                amplitudeThreshold = getFloatFromJSON(cmd, "value");
                 break;
         }
     } else if (cmd.indexOf("changeColor") != -1) {

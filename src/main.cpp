@@ -1,9 +1,9 @@
-#include "../lib/files/config.h"
-#include "../lib/files/led_effects.h"
-#include "../lib/files/network.h"
-// #include "config.h"
-// #include "led_effects.h"
-// #include "network.h"
+// #include "../lib/files/config.h"
+// #include "../lib/files/led_effects.h"
+// #include "../lib/files/network.h"
+#include "config.h"
+#include "led_effects.h"
+#include "network.h"
 
 void setup() {
     Serial.begin(115200);
@@ -21,6 +21,14 @@ void setup() {
 
     Serial.print("Connected to WiFi with IP ");
     Serial.println(WiFi.localIP());
+
+    // // Разрешение DNS имени в IP
+    // resolveHostName();
+    if (!MDNS.begin("colormusicesp32")) {  // Домен будет esp32.local
+        Serial.println("Error starting mDNS");
+    } else {
+        Serial.println("mDNS responder started: colormusicesp32.local");
+    }
 
     // Настройка WebSocket
     webSocket.begin();

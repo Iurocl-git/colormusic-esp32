@@ -1,7 +1,9 @@
 #ifndef LED_EFFECTS_H
 #define LED_EFFECTS_H
 
-#include <FastLED.h>
+// #include <FastLED.h>
+#include <algorithm> // Для std::max и std::min (можно заменить на макросы FastLED если нужно)
+#include <cmath>     // Для round()
 #include "config.h"
 
 // LED Modes

@@ -6,6 +6,8 @@
 #include <WiFiUdp.h>
 #include <ArduinoOTA.h>
 #include "led_effects.h"
+#include "config.h"
+#include <ESPmDNS.h>
 
 // Global variables declarations
 extern WebSocketsServer webSocket;
@@ -15,6 +17,9 @@ extern int lowFreqAmp;
 extern int midFreqAmp;
 extern int highFreqAmp;
 extern int freqAmplitudes[32];
+extern String serverURL;  // This will hold the URL
+extern IPAddress serverIP;  // This will store the resolved IP address
+
 
 // Function Declarations
 void setupOTA();
@@ -25,5 +30,6 @@ float getFloatFromJSON(String json, String key);
 int getValueFromJSON(String json, String key);
 String getStringFromJSON(String json, String key);
 void processAudioData(String data);
+void resolveHostName();
 
 #endif 
