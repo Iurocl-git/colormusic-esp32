@@ -507,6 +507,4 @@ void centerLineEffect() {
 void rainbowLineEffect() {
     int activeLength = NUM_LEDS - LED_START;
     int totalAmp = (lowFreqAmp + midFreqAmp + highFreqAmp) * sensitivity;
-    int rainbowWidth = map(totalAmp, 0, MAX_AMPLITUDE * 3, 0, activeLength);
-    rainbowWave(rainbowWidth, LED_START);
-} 
+    int rainbowWidth = map(

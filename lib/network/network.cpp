@@ -137,9 +137,9 @@ void handleTextCommand(const char* message) {
                 strobeFrequency = getFloatFromJSON(cmd,"value");
                 break;
             case 7:
-                // brightness = getValueFromJSON(cmd,"value");
+                brightness = getValueFromJSON(cmd,"value");
                 // Serial.print("sensitivityHIGH ");
-                Serial.println(brightness);
+                // Serial.println(brightness);
                 FastLED.setBrightness(brightness);
                 break;
             case 8:
@@ -152,7 +152,7 @@ void handleTextCommand(const char* message) {
                 sensitivityMID = getFloatFromJSON(cmd,"value");
                 break;
             case 11:
-                // sensitivityHIGH = getFloatFromJSON(cmd,"value");
+                sensitivityHIGH = getFloatFromJSON(cmd,"value");
                 // Serial.print("sensitivityHIGH ");
                 Serial.println(sensitivityHIGH);
                 break;
@@ -220,5 +220,4 @@ String getStringFromJSON(String json, String key) {
 void processAudioData(String data) {
     lowFreqAmp = getValueFromJSON(data, "LFA") * sensitivityLOW;
     midFreqAmp = getValueFromJSON(data, "MFA") * sensitivityMID;
-    highFreqAmp = getValueFromJSON(data, "HFA") * sensitivityHIGH;
-} 
+    highFreqAmp = getValueFromJSON(data, "HFA") * sens
