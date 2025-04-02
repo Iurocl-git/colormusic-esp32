@@ -8,7 +8,7 @@
 void setup() {
     Serial.begin(115200);
 
-    // Настройка WiFi
+    // WiFi Configuration
     if (!WiFi.config(local_IP, gateway, subnet)) {
         Serial.println("Failed to configure static IP");
     }
@@ -22,33 +22,32 @@ void setup() {
     Serial.print("Connected to WiFi with IP ");
     Serial.println(WiFi.localIP());
 
-    // // Разрешение DNS имени в IP
-    // resolveHostName();
-    if (!MDNS.begin("colormusicesp32")) {  // Домен будет esp32.local
+    // mDNS Configuration
+    if (!MDNS.begin("colormusicesp32")) {  // Domain will be esp32.local
         Serial.println("Error starting mDNS");
     } else {
         Serial.println("mDNS responder started: colormusicesp32.local");
     }
 
-    // Настройка WebSocket
+    // WebSocket Configuration
     webSocket.begin();
     webSocket.onEvent(webSocketEvent);
     Serial.println("WebSocket server started.");
 
-    // Настройка UDP
+    // UDP Configuration
     udp.begin(localUdpPort);
     Serial.printf("Now listening for UDP packets on port %d\n", localUdpPort);
 
-    // Настройка OTA
+    // OTA Configuration
     setupOTA();
 
-    // Настройка LED ленты
+    // LED Strip Configuration
     FastLED.addLeds<WS2812B, LED_PIN, GRB>(leds, NUM_LEDS);
     FastLED.clear();
     FastLED.setBrightness(brightness);
     Serial.println("Strip started.");
 
-    // Инициализация цветовых состояний
+    // Initialize color states
     for(int i = 0; i < 3; i++) {
         zoneColors[i].currentColor = CRGB::Black;
         zoneColors[i].targetColor = CRGB::Black;
@@ -61,14 +60,14 @@ void setup() {
 }
 
 void loop() {
-    // Обработка OTA запросов
+    // Handle OTA requests
     ArduinoOTA.handle();
     
-    // Обработка сетевых событий
+    // Handle network events
     webSocket.loop();
     handleUdpData();
 
-    // Обработка LED эффектов
+    // Handle LED effects
     switch (currentMode) {
         case STATIC:
             showStaticColor(staticColor);

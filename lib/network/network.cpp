@@ -3,23 +3,8 @@
 // Global variables definitions
 WebSocketsServer webSocket(webSocketPort);
 WiFiUDP udp;
-char incomingPacket[maxPacketSize];
-int freqAmplitudes[32];
+char incomingPacket[MAX_PACKET_SIZE];
 LedMode currentMode = RAINBOW_wave;
-
-String serverURL = "ColorMusicESP32.com";  // Установите ваш URL
-IPAddress serverIP;
-
-void resolveHostName() {
-    if (WiFi.hostByName(serverURL.c_str(), serverIP)) {
-        Serial.print("Resolved IP for ");
-        Serial.print(serverURL);
-        Serial.print(": ");
-        Serial.println(serverIP);
-    } else {
-        Serial.println("DNS lookup failed.");
-    }
-}
 
 
 void setupOTA() {
@@ -70,7 +55,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length
 void handleUdpData() {
     int packetSize = udp.parsePacket();
     if (packetSize) {
-        int len = udp.read(incomingPacket, maxPacketSize);
+        int len = udp.read(incomingPacket, MAX_PACKET_SIZE);
         if (len > 0) {
             incomingPacket[len] = 0;
             String receivedMessage = String(incomingPacket);
@@ -91,94 +76,121 @@ void handleTextCommand(const char* message) {
 
     if (cmd.indexOf("changeMode") != -1) {
         FastLED.clear();
-        if (cmd.indexOf("0") != -1) {
-            currentMode = STATIC;
-        } else if (cmd.indexOf("2") != -1) {
-            currentMode = RAINBOW_wave;
-        } else if (cmd.indexOf("1") != -1) {
-            currentMode = FLICKER_color;
-        } else if (cmd.indexOf("3") != -1) {
-            currentMode = STROBE_mode;
-        } else if (cmd.indexOf("4") != -1) {
-            currentMode = THREE_ZONE_freq;
-        } else if (cmd.indexOf("5") != -1) {
-            currentMode = SINGLE_ZONE_freq;
-        } else if (cmd.indexOf("6") != -1) {
-            currentMode = CENTER_DROP_eff;
-        } else if (cmd.indexOf("8") != -1) {
-            currentMode = RAINBOW_LINE_eff;
-        } else if (cmd.indexOf("7") != -1) {
-            currentMode = CENTER_LINE_eff;
-        } else if (cmd.indexOf("9") != -1) {
-            currentMode = FIVE_ZONE_freq;
+        // if (cmd.indexOf("0") != -1) {
+        //     currentMode = STATIC;
+        // } else if (cmd.indexOf("2") != -1) {
+        //     currentMode = RAINBOW_wave;
+        // } else if (cmd.indexOf("1") != -1) {
+        //     currentMode = FLICKER_color;
+        // } else if (cmd.indexOf("3") != -1) {
+        //     currentMode = STROBE_mode;
+        // } else if (cmd.indexOf("4") != -1) {
+        //     currentMode = THREE_ZONE_freq;
+        // } else if (cmd.indexOf("5") != -1) {
+        //     currentMode = SINGLE_ZONE_freq;
+        // } else if (cmd.indexOf("6") != -1) {
+        //     currentMode = CENTER_DROP_eff;
+        // } else if (cmd.indexOf("8") != -1) {
+        //     currentMode = RAINBOW_LINE_eff;
+        // } else if (cmd.indexOf("7") != -1) {
+        //     currentMode = CENTER_LINE_eff;
+        // } else if (cmd.indexOf("9") != -1) {
+        //     currentMode = FIVE_ZONE_freq;
+        // }
+        int mode = getValueFromJSON(cmd, "mode");
+        switch(mode) {
+            case MODE_STATIC:
+                currentMode = STATIC;
+                break;
+            case MODE_FLICKER:
+                currentMode = FLICKER_color;
+                break;
+            case MODE_RAINBOW_WAVE:
+                currentMode = RAINBOW_wave;
+                break;
+            case MODE_STROBE:
+                currentMode = STROBE_mode;
+                break;
+            case MODE_THREE_ZONE:
+                currentMode = THREE_ZONE_freq;
+                break;
+            case MODE_SINGLE_ZONE:
+                currentMode = SINGLE_ZONE_freq;
+                break;
+            case MODE_CENTER_DROP:
+                currentMode = CENTER_DROP_eff;
+                break;
+            case MODE_CENTER_LINE:
+                currentMode = CENTER_LINE_eff;
+                break;
+            case MODE_RAINBOW_LINE:
+                currentMode = RAINBOW_LINE_eff;
+                break;
+            case MODE_FIVE_ZONE:
+                currentMode = FIVE_ZONE_freq;
+                break;
+            default:
+                break;
         }
     } else if (cmd.indexOf("parameterChange") != -1) {
         int name = getValueFromJSON(cmd, "name");
         switch(name) {
-            case 0:
+            case PARAM_SENSITIVITY:
                 sensitivity = getFloatFromJSON(cmd,"value");
                 break;
-            case 1:
+            case PARAM_TRANSITION_SPEED:
                 transitionSpeed = getFloatFromJSON(cmd,"value");
                 break;
-            case 2:
+            case PARAM_PULSE_DECAY:
                 pulseDecay = getFloatFromJSON(cmd,"value");
                 break;
-            case 3:
+            case PARAM_RAINBOW_SPEED:
                 rainbowSpeed = getFloatFromJSON(cmd,"value");
                 break;
-            case 4:
+            case PARAM_WAVE_WIDTH:
                 waveWidth = getFloatFromJSON(cmd,"value");
                 break;
-            case 5:
+            case PARAM_FLICKER_SPEED:
                 flickerSpeed = getFloatFromJSON(cmd,"value");
                 break;
-            case 6:
+            case PARAM_STROBE_FREQUENCY:
                 strobeFrequency = getFloatFromJSON(cmd,"value");
                 break;
-            case 7:
+            case PARAM_BRIGHTNESS:
                 brightness = getValueFromJSON(cmd,"value");
-                // Serial.print("sensitivityHIGH ");
-                // Serial.println(brightness);
                 FastLED.setBrightness(brightness);
                 break;
-            case 8:
+            case PARAM_LED_START:
                 LED_START = getValueFromJSON(cmd,"value");
                 break;
-            case 9:
+            case PARAM_SENSITIVITY_LOW:
                 sensitivityLOW = getFloatFromJSON(cmd,"value");
                 break;
-            case 10:
+            case PARAM_SENSITIVITY_MID:
                 sensitivityMID = getFloatFromJSON(cmd,"value");
                 break;
-            case 11:
+            case PARAM_SENSITIVITY_HIGH:
                 sensitivityHIGH = getFloatFromJSON(cmd,"value");
-                // Serial.print("sensitivityHIGH ");
-                Serial.println(sensitivityHIGH);
                 break;
-            case 12:
-                // Serial.print("MAX_DROPS ");
-                // Serial.println(getValueFromJSON(cmd, "value"));
+            case PARAM_MAX_DROPS:
                 MAX_DROPS = getValueFromJSON(cmd, "value");
                 break;
-            case 13:
+            case PARAM_DROP_EXPANSION_SPEED:
                 DROP_EXPANSION_SPEED = getFloatFromJSON(cmd, "value");
                 break;
-            case 14:
-                // Serial.print("MIN_TRIGGER_INTERVAL ");
-                // Serial.println(getValueFromJSON(cmd, "value"));
+            case PARAM_MIN_TRIGGER_INTERVAL:
                 MIN_TRIGGER_INTERVAL = getValueFromJSON(cmd, "value");
                 break;
-            case 15:
+            case PARAM_CENTER_ZONE_SIZE:
                 CENTER_ZONE_SIZE = getValueFromJSON(cmd, "value");
                 break;
-            case 16:
+            case PARAM_DROP_WIDTH:
                 DROP_WIDTH = getValueFromJSON(cmd, "value");
                 break;
-            case 17:
+            case PARAM_FADE_STYLE:
                 FADE_STYLE = getValueFromJSON(cmd, "value");
                 break;
-            case 18:
+            case PARAM_AMPLITUDE_THRESHOLD:
                 amplitudeThreshold = getFloatFromJSON(cmd, "value");
                 break;
         }
@@ -220,4 +232,5 @@ String getStringFromJSON(String json, String key) {
 void processAudioData(String data) {
     lowFreqAmp = getValueFromJSON(data, "LFA") * sensitivityLOW;
     midFreqAmp = getValueFromJSON(data, "MFA") * sensitivityMID;
-    highFreqAmp = getValueFromJSON(data, "HFA") * sens
+    highFreqAmp = getValueFromJSON(data, "HFA") * sensitivityHIGH;
+} 

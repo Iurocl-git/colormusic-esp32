@@ -12,7 +12,7 @@
 // Global variables declarations
 extern WebSocketsServer webSocket;
 extern WiFiUDP udp;
-extern char incomingPacket[maxPacketSize];
+extern char incomingPacket[MAX_PACKET_SIZE];
 extern int lowFreqAmp;
 extern int midFreqAmp;
 extern int highFreqAmp;

@@ -1,32 +1,16 @@
 #include "led_effects.h"
 
-
-// --- Параметры эффекта ---
-// #define MAX_DROPS 15
-// #define DROP_EXPANSION_SPEED 0.1 // Скорость движения капли (пикселей в мс)
-// #define MIN_TRIGGER_INTERVAL 300 // Мин. интервал создания капель (мс)
-// #define CENTER_ZONE_SIZE 20 // Размер центральной зоны
-// #define DROP_WIDTH 15    // ДЛИНА капли/хвоста (в светодиодах) - можно настроить
-
-// --- Стиль затухания хвоста ---
-// 0: Линейное затухание (просто)
-// 1: Квадратичное затухание (хвост затухает быстрее)
-// 2: Корень квадратный (хвост затухает медленнее)
-// #define FADE_STYLE 1
-#define MAX_DROPS_CONST 30           // Максимальное количество капель
-
-
+#define MAX_DROPS_CONST 30           // Maximum number of drops
 
 struct Drop {
-    bool active = false;        // Активна ли капля?
-    CRGB color;                 // Цвет капли
-    unsigned long startTime;    // Время создания (millis())
-    float initialBrightness;    // Начальная яркость (может зависеть от амплитуды)
+    bool active = false;        // Is the drop active?
+    CRGB color;                 // Drop color
+    unsigned long startTime;    // Creation time (millis())
+    float initialBrightness;    // Initial brightness (can depend on amplitude)
 };
 
-Drop drops[MAX_DROPS_CONST];         // Массив для хранения капель
-unsigned long lastDropTriggerTime = 0; // Время последнего срабатывания триггера для любой частоты
-
+Drop drops[MAX_DROPS_CONST];         // Array to store drops
+unsigned long lastDropTriggerTime = 0; // Last trigger time for any frequency
 
 // Global variables
 CRGB leds[NUM_LEDS];
@@ -209,127 +193,15 @@ void fiveZoneFrequencyVisualization() {
     FastLED.show();
 }
 
-// // Gemini 2.5
-// void centerDropEffect() {
-//     unsigned long currentTime = millis();
-
-//     // 1. Общее затухание всех светодиодов
-//     fadeToBlackBy(leds, NUM_LEDS, DROP_FADE_RATE);
-
-//     // 2. Проверка триггеров и создание новых капель
-//     int amplitudes[] = {lowFreqAmp, midFreqAmp, highFreqAmp};
-//     CRGB colors[] = {lowColor, midColor, highColor};
-//     bool triggered = false; // Флаг, что хотя бы один триггер сработал в этом цикле
-
-//     // Проверяем каждую частоту
-//     for (int i = 0; i < 3; ++i) {
-//         if (amplitudes[i] * sensitivity > amplitudeThreshold) {
-//             triggered = true; // Отмечаем срабатывание
-
-//             // Ищем свободный слот для новой капли
-//             int freeSlot = -1;
-//             for (int j = 0; j < MAX_DROPS; ++j) {
-//                 if (!drops[j].active) {
-//                     freeSlot = j;
-//                     break;
-//                 }
-//             }
-
-//             // Если нашли свободный слот и прошел интервал
-//             if (freeSlot != -1 && (currentTime - lastDropTriggerTime > MIN_TRIGGER_INTERVAL)) {
-//                 drops[freeSlot].active = true;
-//                 drops[freeSlot].color = colors[i];
-//                 drops[freeSlot].startTime = currentTime;
-//                 // Можно сделать начальную яркость зависимой от амплитуды:
-//                 drops[freeSlot].initialBrightness = map(amplitudes[i] * sensitivity, amplitudeThreshold, 255, 150, 255); // Примерная карта
-//                 drops[freeSlot].initialBrightness = constrain(drops[freeSlot].initialBrightness, 150, 255); // Ограничим мин/макс
-//                 lastDropTriggerTime = currentTime; // Обновляем время последнего *успешного* создания капли
-//                 break; // Создаем только одну каплю за цикл от одного типа частоты (можно убрать, если нужно несколько сразу)
-//             }
-//         }
-//     }
-
-
-//     // 3. Обновление и отрисовка активных капель
-//     int center = NUM_LEDS / 2;
-//     for (int i = 0; i < MAX_DROPS; ++i) {
-//         if (drops[i].active) {
-//             unsigned long age = currentTime - drops[i].startTime;
-
-//             // Деактивировать старые капли
-//             if (age > DROP_LIFETIME) {
-//                 drops[i].active = false;
-//                 continue; // Переходим к следующей капле
-//             }
-
-//             // Расчет текущего радиуса "полусферы"
-//             float currentRadius = age * DROP_EXPANSION_SPEED;
-
-//             // Расчет текущей максимальной яркости капли (затухание со временем)
-//             // Плавное затухание от initialBrightness до 0 за DROP_LIFETIME
-//             uint8_t currentMaxBrightness = map(age, 0, DROP_LIFETIME, drops[i].initialBrightness, 0);
-
-//             // Отрисовка полусферы
-//             for (int j = 0; j <= ceil(currentRadius); ++j) { // Идем от центра до текущего радиуса
-//                 int distance = j;
-//                 int leftPos = center - distance;
-//                 int rightPos = center + distance;
-
-//                 // Рассчитываем яркость для этой дистанции (макс в центре, падает к радиусу)
-//                 // Используем квадратичное падение для более плавного вида "сферы"
-//                 // float brightnessFactor = pow(1.0 - (float)distance / currentRadius, 2);
-//                 // Или линейное падение:
-//                 float brightnessFactor = 1.0;
-//                 if (currentRadius > 0) { // Избегаем деления на ноль
-//                     brightnessFactor = 1.0 - constrain((float)distance / currentRadius, 0.0, 1.0);
-//                 }
-
-
-//                 uint8_t pixelBrightness = currentMaxBrightness * brightnessFactor;
-
-//                 // Применяем цвет с расчитанной яркостью к левому и правому пикселю
-//                 if (pixelBrightness > 0) { // Оптимизация - не считать для черных пикселей
-//                     CRGB pixelColor = drops[i].color;
-//                     pixelColor.nscale8(pixelBrightness);
-
-//                     // Левый пиксель (если в пределах ленты)
-//                     if (leftPos >= 0 && leftPos < NUM_LEDS) {
-//                         // Используем addtive blending или max blending
-//                         // Additive: leds[leftPos] += pixelColor; (может привести к белому цвету)
-//                         // Max: (сохраняет цвет, берет самый яркий компонент)
-//                         leds[leftPos].r = max(leds[leftPos].r, pixelColor.r);
-//                         leds[leftPos].g = max(leds[leftPos].g, pixelColor.g);
-//                         leds[leftPos].b = max(leds[leftPos].b, pixelColor.b);
-//                     }
-//                     // Правый пиксель (если в пределах ленты и не центральный)
-//                     if (rightPos < NUM_LEDS && rightPos != leftPos) {
-//                         leds[rightPos].r = max(leds[rightPos].r, pixelColor.r);
-//                         leds[rightPos].g = max(leds[rightPos].g, pixelColor.g);
-//                         leds[rightPos].b = max(leds[rightPos].b, pixelColor.b);
-//                     }
-//                 }
-//                  // Если яркость упала почти до 0 на этой дистанции, дальше можно не считать
-//                 if (pixelBrightness < 5 && distance > 0) break;
-//             }
-//         }
-//     }
-
-//     // 4. Показать результат (если твоя структура предполагает вызов show() внутри эффекта)
-//     FastLED.show();
-// }
-
-// Gemini 2.5
 void centerDropEffect() {
     unsigned long currentTime = millis();
 
-    // Очистка ленты перед отрисовкой
+    // Clear strip before drawing
     fill_solid(leds, NUM_LEDS, CRGB::Black);
 
-    // 2. Проверка триггеров и создание новых капель (код из твоей версии)
+    // Check triggers and create new drops
     int amplitudes[] = {lowFreqAmp, midFreqAmp, highFreqAmp};
     CRGB colors[] = {lowColor, midColor, highColor};
-
-
 
     for (int i = 0; i < 3; ++i) {
         if (amplitudes[i] * sensitivity > amplitudeThreshold) {
@@ -353,120 +225,98 @@ void centerDropEffect() {
         }
     }
 
-    // 3. Обновление и отрисовка активных капель
+    // Update and draw active drops
     int effectCenter = (NUM_LEDS + LED_START) / 2;
     int zoneHalfSize = CENTER_ZONE_SIZE / 2;
     int zoneStart = max(LED_START, effectCenter - zoneHalfSize);
     int zoneEndCalc = effectCenter + zoneHalfSize - ((CENTER_ZONE_SIZE % 2 == 0) ? 1 : 0);
     int zoneEnd = min(NUM_LEDS - 1, zoneEndCalc);
-    zoneStart = min(zoneStart, zoneEnd); // на всякий случай
-
+    zoneStart = min(zoneStart, zoneEnd); // Safety check
 
     for (int i = 0; i < MAX_DROPS; ++i) {
         if (drops[i].active) {
             unsigned long age = currentTime - drops[i].startTime;
             int offset = round((float)age * DROP_EXPANSION_SPEED);
 
-            // Определяем позиции НАЧАЛА и КОНЦА отрезка, где ДОЛЖНА быть капля
-            // Левая капля: самый левый пиксель (острие) до самого правого (хвост)
-            int left_leading_edge = zoneStart - 1 - offset - (DROP_WIDTH - 1); // Самый левый
-            int left_trailing_edge = zoneStart - 1 - offset;                // Самый правый
-            // Правая капля: самый левый пиксель (хвост) до самого правого (острие)
-            int right_trailing_edge = zoneEnd + 1 + offset;                 // Самый левый
-            int right_leading_edge = zoneEnd + 1 + offset + (DROP_WIDTH - 1); // Самый правый
+            // Define START and END positions of the drop segment
+            // Left drop: from leftmost pixel (tip) to rightmost (tail)
+            int left_leading_edge = zoneStart - 1 - offset - (DROP_WIDTH - 1); // Leftmost
+            int left_trailing_edge = zoneStart - 1 - offset;                // Rightmost
+            // Right drop: from leftmost pixel (tail) to rightmost (tip)
+            int right_trailing_edge = zoneEnd + 1 + offset;                 // Leftmost
+            int right_leading_edge = zoneEnd + 1 + offset + (DROP_WIDTH - 1); // Rightmost
 
-             // --- УСЛОВИЕ ДЕАКТИВАЦИИ ---
-             // Деактивируем, когда хвост (самый близкий к центру пиксель)
-             // полностью ушел за край ленты.
+            // --- DEACTIVATION CONDITION ---
+            // Deactivate when tail (pixel closest to center) is completely off the strip
             if ( (left_trailing_edge < 0) && (right_trailing_edge >= NUM_LEDS) ) {
                 drops[i].active = false;
-                continue; // Эта капля больше не рисуется
+                continue; // This drop is no longer drawn
             }
 
-            // --- Отрисовка ЛЕВОЙ капли С ГРАДИЕНТОМ ---
+            // --- Draw LEFT drop with GRADIENT ---
             for (int k = left_leading_edge; k <= left_trailing_edge; ++k) {
-                // Проверяем, находится ли пиксель в допустимой зоне (ВНУТРИ ленты и ЛЕВЕЕ центральной зоны)
+                // Check if pixel is in valid zone (INSIDE strip and LEFT of center zone)
                 if (k >= 0 && k < zoneStart) {
-                    // Рассчитываем позицию пикселя k внутри капли (0=острие, DROP_WIDTH-1=хвост)
+                    // Calculate pixel position within drop (0=tip, DROP_WIDTH-1=tail)
                     int pos_in_drop = k - left_leading_edge;
-                    // Рассчитываем фактор яркости (0.0 у хвоста, 1.0 на острие)
-                    float relativePos = (float)pos_in_drop / (DROP_WIDTH > 1 ? (DROP_WIDTH - 1) : 1); // от 0 до 1
+                    // Calculate brightness factor (0.0 at tail, 1.0 at tip)
+                    float relativePos = (float)pos_in_drop / (DROP_WIDTH > 1 ? (DROP_WIDTH - 1) : 1); // from 0 to 1
                     float brightnessFactor;
 
-                    // #if FADE_STYLE == 0 // Линейный
-                    // brightnessFactor = 1.0 - relativePos;
-                    // #elif FADE_STYLE == 1 // Квадратичный (быстрый спад)
-                    // brightnessFactor = pow(1.0 - relativePos, 2);
-                    // #elif FADE_STYLE == 2 // Корень (медленный спад)
-                    // brightnessFactor = sqrt(1.0 - relativePos);
-                    // #else // По умолчанию линейный
-                    // brightnessFactor = 1.0 - relativePos;
-                    // #endif
-
-                    if(FADE_STYLE == 0) // Линейный
+                    if(FADE_STYLE == 0) // Linear
                         brightnessFactor = 1.0 - relativePos;
-                    else if(FADE_STYLE == 1) // Квадратичный (быстрый спад)
+                    else if(FADE_STYLE == 1) // Quadratic (fast decay)
                         brightnessFactor = pow(1.0 - relativePos, 2);
-                    else if(FADE_STYLE == 2) // Корень (медленный спад)
+                    else if(FADE_STYLE == 2) // Square root (slow decay)
                         brightnessFactor = sqrt(1.0 - relativePos);
-                    else // По умолчанию линейный
+                    else // Default to linear
                         brightnessFactor = 1.0 - relativePos;
 
                     brightnessFactor = constrain(brightnessFactor, 0.0, 1.0);
                     uint8_t pixelBrightness = drops[i].initialBrightness * brightnessFactor;
 
-                    if (pixelBrightness > 3) { // Рисуем только если яркость заметна
+                    if (pixelBrightness > 3) { // Draw only if brightness is noticeable
                         CRGB finalPixelColor = drops[i].color;
                         finalPixelColor.nscale8(pixelBrightness);
-                        leds[k] = finalPixelColor; // Присваиваем рассчитанный цвет
+                        leds[k] = finalPixelColor; // Assign calculated color
                     }
                 }
-            } // Конец отрисовки левой капли
+            } // End of left drop drawing
 
-            // --- Отрисовка ПРАВОЙ капли С ГРАДИЕНТОМ ---
+            // --- Draw RIGHT drop with GRADIENT ---
             for (int k = right_trailing_edge; k <= right_leading_edge; ++k) {
-                 // Проверяем, находится ли пиксель в допустимой зоне (ВНУТРИ ленты и ПРАВЕЕ центральной зоны)
+                // Check if pixel is in valid zone (INSIDE strip and RIGHT of center zone)
                 if (k < NUM_LEDS && k > zoneEnd) {
-                    // Рассчитываем позицию пикселя k внутри капли (0=острие, DROP_WIDTH-1=хвост)
-                    // Острие здесь right_leading_edge
+                    // Calculate pixel position within drop (0=tip, DROP_WIDTH-1=tail)
+                    // Tip is at right_leading_edge
                     int pos_in_drop = right_leading_edge - k;
-                    // Рассчитываем фактор яркости (0.0 у хвоста, 1.0 на острие)
-                    float relativePos = (float)pos_in_drop / (DROP_WIDTH > 1 ? (DROP_WIDTH - 1) : 1); // от 0 до 1
+                    // Calculate brightness factor (0.0 at tail, 1.0 at tip)
+                    float relativePos = (float)pos_in_drop / (DROP_WIDTH > 1 ? (DROP_WIDTH - 1) : 1); // from 0 to 1
                     float brightnessFactor;
 
-                    // #if FADE_STYLE == 0 // Линейный
-                    // brightnessFactor = 1.0 - relativePos;
-                    // #elif FADE_STYLE == 1 // Квадратичный
-                    // brightnessFactor = pow(1.0 - relativePos, 2);
-                    // #elif FADE_STYLE == 2 // Корень
-                    // brightnessFactor = sqrt(1.0 - relativePos);
-                    // #else // Линейный
-                    // brightnessFactor = 1.0 - relativePos;
-                    // #endif
-
-                    if(FADE_STYLE == 0) // Линейный
+                    if(FADE_STYLE == 0) // Linear
                         brightnessFactor = 1.0 - relativePos;
-                    else if(FADE_STYLE == 1) // Квадратичный (быстрый спад)
+                    else if(FADE_STYLE == 1) // Quadratic (fast decay)
                         brightnessFactor = pow(1.0 - relativePos, 2);
-                    else if(FADE_STYLE == 2) // Корень (медленный спад)
+                    else if(FADE_STYLE == 2) // Square root (slow decay)
                         brightnessFactor = sqrt(1.0 - relativePos);
-                    else // По умолчанию линейный
+                    else // Default to linear
                         brightnessFactor = 1.0 - relativePos;
 
                     brightnessFactor = constrain(brightnessFactor, 0.0, 1.0);
                     uint8_t pixelBrightness = drops[i].initialBrightness * brightnessFactor;
 
-                     if (pixelBrightness > 3) { // Рисуем только если яркость заметна
+                    if (pixelBrightness > 3) { // Draw only if brightness is noticeable
                         CRGB finalPixelColor = drops[i].color;
                         finalPixelColor.nscale8(pixelBrightness);
-                        leds[k] = finalPixelColor; // Присваиваем рассчитанный цвет
+                        leds[k] = finalPixelColor; // Assign calculated color
                     }
                 }
-            } // Конец отрисовки правой капли
+            } // End of right drop drawing
 
-            // --- Зажигание центральной зоны ПРИ СОЗДАНИИ (код из твоей версии) ---
+            // --- Light up center zone ON CREATION ---
             if (age < 35) {
-                 // Цвет с максимальной яркостью для вспышки
+                // Color with maximum brightness for flash
                 CRGB flashColor = drops[i].color;
                 flashColor.nscale8(drops[i].initialBrightness);
                 for (int k = zoneStart; k < zoneEnd; ++k) {
@@ -476,10 +326,10 @@ void centerDropEffect() {
                 }
             }
 
-        } // конец if (drops[i].active)
-    } // конец цикла по каплям (i)
+        } // end if (drops[i].active)
+    } // end drops loop (i)
 
-    // 4. Показать результат
+    // Show result
     FastLED.show();
 }
 
@@ -507,4 +357,6 @@ void centerLineEffect() {
 void rainbowLineEffect() {
     int activeLength = NUM_LEDS - LED_START;
     int totalAmp = (lowFreqAmp + midFreqAmp + highFreqAmp) * sensitivity;
-    int rainbowWidth = map(
+    int rainbowWidth = map(totalAmp, 0, MAX_AMPLITUDE * 3, 0, activeLength);
+    rainbowWave(rainbowWidth, LED_START);
+} 
