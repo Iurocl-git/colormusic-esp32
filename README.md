@@ -31,6 +31,9 @@ A music visualization system based on ESP32 that creates dynamic lighting effect
 - Zone configurations
 - Network settings
 
+### Application
+You can find the application for this project at the following link [`Color-Music`](https://github.com/Iurocl-git/Color-Music.git)
+
 ## Technical Specifications
 
 ### Hardware
